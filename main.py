@@ -25,7 +25,7 @@ class PagoWebPay(BaseModel):
 
 
 MAKE_WEBHOOK_COMPRAS = "https://hook.us2.make.com/kbfzdf21pwwi1kfoxdb5q6lqgepgup69"
-MAKE_WEBHOOK_CARGAS = "https://hook.make.com/tu-webhook-cargas"
+MAKE_WEBHOOK_CARGAS = "https://hook.us2.make.com/31k1qtua6t71xvc7g8ty88l9dfn6dit6"
 MAKE_WEBHOOK_PAGOS = "https://hook.make.com/tu-webhook-pagos"
 
 ################ Endpoints para Solicitud de Compras ################
