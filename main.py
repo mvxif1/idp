@@ -17,6 +17,8 @@ class SolicitudCompra(BaseModel):
 class SolicitudCargaFamiliar(BaseModel):
     nombre: str
     rut: str
+    nombre_familiar: str
+    rut_familiar: str
     parentesco: str
 
 
