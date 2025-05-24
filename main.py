@@ -41,7 +41,7 @@ def crear_solicitud_compra(solicitud: SolicitudCompra):
         raise HTTPException(status_code=500, detail=f"Error enviando a Make: {str(e)}")
     return {"solicitud_id": solicitud_id, "mensaje": "Solicitud enviada a Make"}
 
-## para futuro endpoint para verificar el estado de la solicitud
+## endpoint para verificar el estado de la solicitud
 @app.get("/compras/estado/{solicitud_id}")
 def consultar_estado_solicitud_webhook(solicitud_id: str):
     if not solicitud_id:
@@ -53,7 +53,10 @@ def consultar_estado_solicitud_webhook(solicitud_id: str):
             timeout=5
         )
         response.raise_for_status()
-        return response.json()
+        try:
+            return response.json()
+        except ValueError:
+            return { "detalle": "Respuesta", "contenido": response.text}
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Error consultando a Make: {str(e)}")
 
