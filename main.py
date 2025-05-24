@@ -8,7 +8,8 @@ app = FastAPI()
 
 # Modelos de datos
 class SolicitudCompra(BaseModel):
-    nombre: str
+    nombre_usuario: str
+    correo: str
     item: str
     cantidad: int
     motivo: str
@@ -23,58 +24,59 @@ class PagoWebPay(BaseModel):
     monto: float
 
 
-MAKE_WEBHOOK_COMPRAS = "https://hook.make.com/tu-webhook-compras"
+MAKE_WEBHOOK_COMPRAS = "https://hook.us2.make.com/kbfzdf21pwwi1kfoxdb5q6lqgepgup69"
 MAKE_WEBHOOK_CARGAS = "https://hook.make.com/tu-webhook-cargas"
 MAKE_WEBHOOK_PAGOS = "https://hook.make.com/tu-webhook-pagos"
 
-# Endpoints para Solicitud de Compras
+################ Endpoints para Solicitud de Compras ################
 @app.post("/compras/solicitud")
 def crear_solicitud_compra(solicitud: SolicitudCompra):
     solicitud_id = str(uuid.uuid4())
-    payload = solicitud.dict()
+    payload = solicitud.model_dump()
     payload["solicitud_id"] = solicitud_id
-    payload["estado"] = "pendiente"
-    # Enviar datos a Make para guardar en Google Sheets
     try:
-        requests.post(MAKE_WEBHOOK_COMPRAS, json=payload, timeout=5)
-    except Exception as e:
-        pass  # Puedes loguear el error si quieres
-    return {"solicitud_id": solicitud_id, "estado": "pendiente"}
+        response = requests.post(MAKE_WEBHOOK_COMPRAS, json=payload, timeout=5)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Error enviando a Make: {str(e)}")
+    return {"solicitud_id": solicitud_id, "mensaje": "Solicitud enviada a Make"}
 
 @app.get("/compras/estado/{solicitud_id}")
 def estado_solicitud_compra(solicitud_id: str):
-    # Aquí deberías consultar el estado desde Google Sheets vía Make
-    # Simulación: solo retorna el estado "simulado"
+    if not solicitud_id:
+        raise HTTPException(status_code=400, detail="ID de solicitud requerido")
     return {"solicitud_id": solicitud_id, "estado": "simulado"}
 
-# Endpoints para Cargas Familiares
+################ Endpoints para Cargas Familiares ################
 @app.post("/cargas/solicitud")
 def crear_solicitud_carga(carga: SolicitudCargaFamiliar):
     carga_id = str(uuid.uuid4())
-    payload = carga.dict()
+    payload = carga.model_dump()
     payload["carga_id"] = carga_id
     payload["estado"] = "pendiente"
-    # Enviar datos a Make para guardar en Google Sheets
     try:
-        requests.post(MAKE_WEBHOOK_CARGAS, json=payload, timeout=5)
-    except Exception as e:
-        pass
+        response = requests.post(MAKE_WEBHOOK_CARGAS, json=payload, timeout=5)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Error enviando a Make: {str(e)}")
     return {"carga_id": carga_id, "estado": "pendiente"}
 
 @app.get("/cargas/estado/{carga_id}")
 def estado_carga_familiar(carga_id: str):
-    # Aquí deberías consultar el estado desde Google Sheets vía Make
-    # Simulación: solo retorna el estado "simulado"
+    if not carga_id:
+        raise HTTPException(status_code=400, detail="ID de carga requerido")
     return {"carga_id": carga_id, "estado": "simulado"}
 
 # Endpoint para simular pago WebPay
 @app.post("/pagos/webpay")
 def pagar_webpay(pago: PagoWebPay):
-    payload = pago.dict()
+    if not pago.solicitud_id or pago.monto <= 0:
+        raise HTTPException(status_code=400, detail="Datos de pago inválidos")
+    payload = pago.model_dump()
     payload["estado_pago"] = "aprobado"
-    # Notificar a Make del pago realizado
     try:
-        requests.post(MAKE_WEBHOOK_PAGOS, json=payload, timeout=5)
-    except Exception as e:
-        pass
+        response = requests.post(MAKE_WEBHOOK_PAGOS, json=payload, timeout=5)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Error enviando a Make: {str(e)}")
     return {"solicitud_id": pago.solicitud_id, "monto": pago.monto, "estado_pago": "aprobado"}
